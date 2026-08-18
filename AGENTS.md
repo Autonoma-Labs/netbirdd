@@ -26,6 +26,7 @@ in this file, not duplicated there.
 - [Error handling](#error-handling)
 - [Comments](#comments)
 - [Testing](#testing)
+- [Autonoma test data](#autonoma-test-data)
 - [Pitfalls](#pitfalls)
 - [Commits, PRs, releases](#commits-prs-releases)
 - [After you push: CI and review bots](#after-you-push-ci-and-review-bots)
@@ -158,6 +159,7 @@ netbird/
 | Permissions model           | `management/server/permissions/`                             |
 | LLM routing / Agent Network | `proxy/internal/llm/`, `agent-network/`                      |
 | End-to-end tests            | `e2e/`                                                       |
+| Autonoma test-data endpoint | `management/server/http/handlers/autonoma/`                  |
 
 ## Security
 
@@ -601,6 +603,29 @@ result, err := client.DoOperation()
 assert.NoError(t, err)
 assert.Equal(t, expectedResult, result, "Result should match expected")
 ```
+
+## Autonoma test data
+
+Autonoma is an end-to-end testing service: before it runs a suite against a
+preview deployment it asks the management API to seed a throwaway account, and
+afterwards it asks for that account to be deleted again. Both requests land on
+`POST /api/autonoma`, an HMAC-signed endpoint that mounts itself only when
+`AUTONOMA_SHARED_SECRET` and `AUTONOMA_SIGNING_SECRET` are both in the
+environment. Its factories live in
+[`management/server/http/handlers/autonoma/`](management/server/http/handlers/autonoma/)
+and create every row through the same managers the REST handlers call, so the
+seeded data carries the real validation, activity events, IdP users and network
+map updates — never a raw insert standing in for them.
+
+**Add or update a factory whenever you add a model or change how one is
+created.** A model with a new creation path, a new required field, or a new
+invariant makes the matching factory wrong, and the failure shows up as a test
+suite that cannot seed rather than as a compile error. Keep the teardown honest
+too: most rows go with the account, but a table with no association back to it
+needs its own scoped delete (see `management/server/store/sql_store_testdata.go`).
+Anything the app compares against the current time takes an offset as its
+factory input and derives the instant at seeding time — a recipe is stored once
+and replayed for months, so a stored timestamp goes stale.
 
 ## Pitfalls
 
