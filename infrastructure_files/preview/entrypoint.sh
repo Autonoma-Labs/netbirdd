@@ -43,6 +43,17 @@ fi
 ORIGIN="${SCHEME}://${HOSTPORT}"
 EXPOSED_ADDRESS="${SCHEME}://${EXPOSED_HOSTPORT}"
 
+# The dashboard runs as its own container in the preview, so the origin a login
+# returns to is the dashboard's, not the server's. It is only known at deploy
+# time like everything else here, and it falls back to the server's own origin so
+# a server-only preview keeps working unchanged.
+DASHBOARD_URL="${NB_PREVIEW_DASHBOARD_URL:-${ORIGIN}}"
+DASHBOARD_URL="${DASHBOARD_URL%/}"
+case "${DASHBOARD_URL}" in
+  http://*|https://*) DASHBOARD_ORIGIN="${DASHBOARD_URL}" ;;
+  *)                  DASHBOARD_ORIGIN="https://${DASHBOARD_URL}" ;;
+esac
+
 OWNER_EMAIL="${NB_PREVIEW_OWNER_EMAIL:-admin@preview.autonoma.app}"
 # bcrypt hash of the preview password "Preview!2345". Override both together.
 OWNER_PASSWORD_HASH="${NB_PREVIEW_OWNER_PASSWORD_HASH:-\$2a\$10\$8QvbcceHoKU8Nywc55/2AegrlsWegSfNyRNyFiPpi/nbdbSqTxSrm}"
@@ -89,11 +100,11 @@ server:
     localAuthDisabled: false
     sessionCookieEncryptionKey: "${COOKIE_ENCRYPTION_KEY}"
     dashboardRedirectURIs:
-      - "${ORIGIN}/nb-auth"
-      - "${ORIGIN}/nb-silent-auth"
+      - "${DASHBOARD_ORIGIN}/nb-auth"
+      - "${DASHBOARD_ORIGIN}/nb-silent-auth"
       - "${ORIGIN}/oauth2/callback"
     dashboardPostLogoutRedirectURIs:
-      - "${ORIGIN}/"
+      - "${DASHBOARD_ORIGIN}/"
     cliRedirectURIs:
       - "http://localhost:53000/"
     owner:
@@ -116,6 +127,6 @@ YAML
 YAML
 } > "${CONFIG_PATH}"
 
-echo "netbird-preview: origin=${ORIGIN} exposed=${EXPOSED_ADDRESS} store=${STORE_ENGINE} listen=:${PORT}"
+echo "netbird-preview: origin=${ORIGIN} dashboard=${DASHBOARD_ORIGIN} exposed=${EXPOSED_ADDRESS} store=${STORE_ENGINE} listen=:${PORT}"
 
 exec /go/bin/netbird-server --config "${CONFIG_PATH}" "$@"

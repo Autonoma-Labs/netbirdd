@@ -7,11 +7,13 @@ and the compose templates in the parent directory for that.
 
 ## What gets deployed
 
-A single container running the **combined** server (`../../combined`), which
-multiplexes Management, Signal, Relay and the embedded Dex identity provider onto
-one HTTP port, plus a Postgres service for the management store. TLS is
-terminated by the preview ingress, so the container speaks plain HTTP (h2c) and
-the public `https://` origin is passed in as `NB_PREVIEW_PUBLIC_URL`.
+A container running the **combined** server (`../../combined`), which multiplexes
+Management, Signal, Relay and the embedded Dex identity provider onto one HTTP
+port, a Postgres service for the management store, and the **dashboard** — built
+from `Autonoma-Labs/netbird-dashboard`, which is a separate repository, so the
+preview config pulls it in rather than this repo building it. TLS is terminated
+by the preview ingress, so the container speaks plain HTTP (h2c) and the public
+`https://` origin is passed in as `NB_PREVIEW_PUBLIC_URL`.
 
 | Path | Served by |
 | --- | --- |
@@ -22,9 +24,12 @@ the public `https://` origin is passed in as `NB_PREVIEW_PUBLIC_URL`.
 The health check is `GET /oauth2/keys`, which serves the JWKS unauthenticated
 once the IdP has finished booting.
 
-There is no dashboard container: the NetBird dashboard lives in a separate
-repository, so a preview built from this repo exposes the login UI and the API,
-not the full web console.
+The dashboard is the browser-facing half and gets its own origin, which is why
+the server has to be told about it: an OIDC login has to return to the
+dashboard's URL, not the server's. `NB_PREVIEW_DASHBOARD_URL` carries it, and
+when it is unset the redirect URIs fall back to the server's own origin — a
+server-only preview (login UI plus API, no web console) still boots exactly as
+it did before.
 
 ## Files
 
@@ -40,6 +45,7 @@ not the full web console.
 | --- | --- | --- | --- |
 | `NB_PREVIEW_PUBLIC_URL` | yes | — | The preview's public origin, e.g. `https://abc.previews.example.com`. Drives the OIDC issuer, redirect URIs, relay/signal addresses and the management DNS domain. |
 | `NB_PREVIEW_DATABASE_URL` | no | unset | Postgres connection URL for the management store. Falls back to SQLite in the data dir when unset. |
+| `NB_PREVIEW_DASHBOARD_URL` | no | the server's own origin | Origin the dashboard container is served from. Drives the dashboard's OIDC redirect and post-logout URIs. |
 | `NB_PREVIEW_PORT` | no | `8080` | Listen port inside the container. |
 | `NB_PREVIEW_DATA_DIR` | no | `/var/lib/netbird` | Data dir for SQLite stores and generated state. |
 | `NB_PREVIEW_LOG_LEVEL` | no | `info` | Log level for all embedded services. |
