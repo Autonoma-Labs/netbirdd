@@ -612,8 +612,11 @@ afterwards it asks for that account to be deleted again. Both requests land on
 `POST /api/autonoma`, an HMAC-signed endpoint that mounts itself only when
 `AUTONOMA_SHARED_SECRET` and `AUTONOMA_SIGNING_SECRET` are both in the
 environment. Its factories live in
-[`management/server/http/handlers/autonoma/`](management/server/http/handlers/autonoma/)
-and create every row through the same managers the REST handlers call, so the
+[`management/server/http/handlers/autonoma/`](management/server/http/handlers/autonoma/),
+next to a [README](management/server/http/handlers/autonoma/README.md) covering
+the endpoint, every factory's creation path and the three places this
+deliberately does not go through a manager. They create every row through the
+same managers the REST handlers call, so the
 seeded data carries the real validation, activity events, IdP users and network
 map updates — never a raw insert standing in for them.
 

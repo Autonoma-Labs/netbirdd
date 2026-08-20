@@ -2,8 +2,10 @@
 
 Autonoma is an end-to-end testing service. Before it runs a suite against a
 preview deployment it asks this repository's management API to seed a throwaway
-account, and afterwards it asks for that account to be removed again. This file
-tracks the work that wired that up.
+account, and afterwards it asks for that account to be removed again. This
+package is the endpoint it drives, and this file is its reference: what the
+endpoint is, which manager each factory creates its model through, and where it
+deliberately does not use one.
 
 **SDK endpoint path: /api/autonoma** (the conventional default; nothing to
 reconfigure on the Autonoma side.)
