@@ -37,6 +37,14 @@ type ProxyInput struct {
 	HeartbeatValidForMinutes int `json:"heartbeatValidForMinutes,omitempty"`
 	// SupportsCustomPorts lets services on this cluster bind their own ports.
 	SupportsCustomPorts bool `json:"supportsCustomPorts,omitempty"`
+	// GatewayID names an agent-network gateway this cluster serves, for a
+	// recipe whose ClusterAddress is that gateway's endpoint. It changes
+	// nothing about the cluster - the two are linked by the hostname alone -
+	// and exists for ordering: the product refuses to delete a gateway while a
+	// proxy is serving its endpoint, so the proxy has to be created after the
+	// gateway and torn down before it. Referencing it is what the SDK derives
+	// that order from.
+	GatewayID string `json:"gatewayId,omitempty"`
 }
 
 func (f *factories) proxyFactory() sdk.FactoryDefinition {
