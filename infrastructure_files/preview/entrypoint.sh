@@ -100,6 +100,13 @@ server:
     localAuthDisabled: false
     sessionCookieEncryptionKey: "${COOKIE_ENCRYPTION_KEY}"
     dashboardRedirectURIs:
+      # The dashboard is a static export behind nginx, so its own default return
+      # paths are hash fragments - a real path like /nb-auth is a 404 there. Dex
+      # matches a redirect URI by exact string, so both forms are registered:
+      # the fragments the dashboard uses, and the paths a dashboard build that
+      # does serve them would use.
+      - "${DASHBOARD_ORIGIN}/#callback"
+      - "${DASHBOARD_ORIGIN}/#silent-callback"
       - "${DASHBOARD_ORIGIN}/nb-auth"
       - "${DASHBOARD_ORIGIN}/nb-silent-auth"
       - "${ORIGIN}/oauth2/callback"
