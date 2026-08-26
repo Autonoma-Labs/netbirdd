@@ -3,8 +3,43 @@
 # Renders /etc/netbird/config.yaml for a preview deployment and starts the
 # combined NetBird server. A preview's public URL is assigned at deploy time, so
 # the issuer, redirect URIs, relay and signal addresses cannot be baked into a
-# static config file. Everything here is preview-only: the seeded owner
-# credentials and encryption keys are fixed on purpose so tests can log in.
+# static config file.
+#
+# The container runs the combined server (Management, Signal, Relay and the
+# embedded Dex IdP multiplexed onto one HTTP port). TLS is terminated by the
+# preview ingress, so it speaks plain HTTP (h2c) and takes the public https://
+# origin as NB_PREVIEW_PUBLIC_URL. /oauth2/... is Dex, /api/... is the management
+# REST API, and everything else on the port is management gRPC.
+#
+# Inputs, all optional except the first:
+#
+#   NB_PREVIEW_PUBLIC_URL           required. The preview's public origin. Drives
+#                                   the OIDC issuer, redirect URIs, the
+#                                   relay/signal addresses and the management
+#                                   DNS domain.
+#   NB_PREVIEW_DASHBOARD_URL        origin the dashboard is served from, for its
+#                                   OIDC redirect and post-logout URIs. Defaults
+#                                   to this server's own origin, so a
+#                                   server-only preview still boots.
+#   NB_PREVIEW_DATABASE_URL         Postgres URL for the management store.
+#                                   Falls back to SQLite in the data dir.
+#   NB_PREVIEW_PORT                 listen port inside the container (8080).
+#   NB_PREVIEW_DATA_DIR             data dir for the SQLite stores
+#                                   (/var/lib/netbird).
+#   NB_PREVIEW_LOG_LEVEL            log level for every embedded service (info).
+#   NB_PREVIEW_OWNER_EMAIL          seeded owner (admin@preview.autonoma.app).
+#   NB_PREVIEW_OWNER_PASSWORD_HASH  bcrypt hash of the owner password. Override
+#                                   together with the email.
+#   NB_PREVIEW_AUTH_SECRET          shared secret for relay authentication.
+#   NB_PREVIEW_STORE_ENCRYPTION_KEY base64 32-byte key. Fixed by default so a
+#                                   redeploy can still read what the previous
+#                                   boot encrypted.
+#   NB_PREVIEW_COOKIE_ENCRYPTION_KEY base64 32-byte key for Dex session cookies.
+#
+# The owner credentials and the two encryption keys have fixed defaults on
+# purpose, so an automated suite can log in without being told a secret. They
+# belong to throwaway preview environments only - never point them at anything a
+# real user or real data can reach.
 #
 set -euo pipefail
 

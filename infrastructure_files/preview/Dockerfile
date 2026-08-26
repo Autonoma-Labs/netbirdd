@@ -1,9 +1,19 @@
-# Preview image for Autonoma preview environments.
+# Preview image for the combined server.
 #
-# Builds the combined NetBird server (Management + Signal + Relay + embedded Dex
-# IdP, all multiplexed on one port) and wraps it in an entrypoint that renders
-# /etc/netbird/config.yaml from environment variables, because a preview's public
-# URL is only known at deploy time. See README.md in this directory.
+# This is combined/Dockerfile.multistage plus exactly one thing: an entrypoint
+# that renders /etc/netbird/config.yaml before starting the server.
+#
+# It exists because the combined server reads its configuration from a YAML file
+# and nothing else - LoadConfig in combined/cmd/config.go unmarshals a file, and
+# there is no environment-variable path into CombinedConfig. A preview's public
+# URL is only assigned at deploy time, so the OIDC issuer, the dashboard's
+# redirect URIs and the relay/signal addresses cannot be baked into a committed
+# config file. Something has to write that file at container start.
+#
+# The builder stage below is deliberately the same as the one in
+# combined/Dockerfile.multistage: a Docker build takes a single Dockerfile and
+# has to compile this branch's own source, so starting FROM a prebuilt combined
+# image is not an option. Keep the two in sync.
 #
 # Build context is the repository root.
 
@@ -19,6 +29,8 @@ RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 COPY . .
 
+# A preview has no tags to describe, so the version is passed in rather than
+# derived from git the way combined/Dockerfile.multistage does.
 ARG NETBIRD_VERSION=preview
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
@@ -27,14 +39,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -o netbird-server ./combined
 
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y ca-certificates && rm -fr /var/cache/apt
 
 COPY --from=builder /app/netbird-server /go/bin/netbird-server
 COPY infrastructure_files/preview/entrypoint.sh /usr/local/bin/netbird-preview-entrypoint
-
-RUN chmod +x /usr/local/bin/netbird-preview-entrypoint \
-    && mkdir -p /var/lib/netbird /etc/netbird
+RUN chmod +x /usr/local/bin/netbird-preview-entrypoint
 
 ENV NB_PREVIEW_PORT=8080
 EXPOSE 8080
