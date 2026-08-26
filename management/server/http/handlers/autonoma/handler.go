@@ -2,10 +2,50 @@
 // signed HTTP route that seeds a complete, isolated NetBird account before an
 // end-to-end test run and removes it afterwards.
 //
+// The route is POST /api/autonoma, and it mounts itself only when both
+// AUTONOMA_SHARED_SECRET and AUTONOMA_SIGNING_SECRET are in the environment - a
+// deployment that does not opt in never serves it. Every request is HMAC-signed
+// with the shared secret and verified by the SDK, and the teardown token that
+// "down" presents is signed with the signing secret, so a teardown can only ever
+// delete what its own "up" created.
+//
 // Every model is created through the same manager the product itself calls, so
-// the seeded data carries the real validation, events, IdP records and network
-// map updates a hand-made INSERT would skip. See AGENTS.md ("Autonoma test
-// data") for what to do when a model or its creation path changes.
+// the seeded data carries the real validation, activity events, IdP records and
+// network map updates a hand-made INSERT would skip. Teardown deletes the
+// account and lets the graph go with it, including rows a test created mid-run
+// that no recipe named; the few tables that hang off an account without a GORM
+// association get scoped, idempotent deletes in
+// management/server/store/sql_store_testdata.go.
+//
+// # Maintenance
+//
+// Add or update a factory whenever you add a model or change how one is
+// created. A model with a new creation path, a new required field or a new
+// invariant makes the matching factory wrong, and it shows up as a suite that
+// cannot seed rather than as a compile error. Anything the app compares against
+// the current time takes an offset as its factory input and derives the instant
+// at seeding time - a recipe is stored once and replayed for months, so a stored
+// timestamp goes stale.
+//
+// # Where a factory does not use a manager
+//
+// Job cannot go through DefaultAccountManager.CreatePeerJob, which refuses a
+// peer with no live gRPC stream and pushes the job down that stream before
+// persisting it; a seeded peer has no agent behind it. The factory builds the
+// job with the product's own types.NewJob constructor and writes it with the
+// same Store.CreatePeerJob call the manager's transaction makes, so the only
+// skipped side effect is the push to an agent that is not there.
+//
+// installation is a genuine global singleton: the table holds one row on a fixed
+// primary key, so it cannot be made per-run. Seeding it overwrites the
+// deployment's installation id and teardown restores the previous value.
+// Concurrent runs overwrite each other rather than colliding, and the last
+// teardown puts the original back.
+//
+// A seeded Proxy has no process sending heartbeats, and a proxy counts as active
+// only while its last heartbeat is under two minutes old. The factory stamps the
+// heartbeat heartbeatValidForMinutes ahead instead (two hours by default), which
+// keeps the cluster online for the length of a run.
 package autonoma
 
 import (
