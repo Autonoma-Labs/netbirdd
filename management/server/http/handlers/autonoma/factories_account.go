@@ -265,34 +265,6 @@ func (f *factories) userInviteFactory() sdk.FactoryDefinition {
 	)
 }
 
-// InstallationInput sets the deployment's installation id.
-//
-// This one is genuinely instance-wide: the table holds a single row on a fixed
-// primary key, so it cannot be made per-run. Seeding it overwrites whatever the
-// deployment had, and teardown puts the previous value back.
-type InstallationInput struct {
-	InstallationID string `json:"installationId"`
-}
-
-func (f *factories) installationFactory() sdk.FactoryDefinition {
-	return define(
-		func(ctx context.Context, in *InstallationInput, _ sdk.FactoryContext) (map[string]any, error) {
-			previous := f.deps.Store.GetInstallationID()
-			if err := f.deps.Store.SaveInstallationID(ctx, in.InstallationID); err != nil {
-				return nil, fmt.Errorf("save the installation id: %w", err)
-			}
-			return map[string]any{
-				"id":                in.InstallationID,
-				"installationId":    in.InstallationID,
-				"previousInstallID": previous,
-			}, nil
-		},
-		func(ctx context.Context, record map[string]any) error {
-			return f.deps.Store.SaveInstallationID(ctx, str(record, "previousInstallID"))
-		},
-	)
-}
-
 func (f *factories) embeddedIdp() (*idp.EmbeddedIdPManager, error) {
 	embedded, ok := f.deps.IdpManager.(*idp.EmbeddedIdPManager)
 	if !ok || embedded == nil {

@@ -36,12 +36,6 @@
 // same Store.CreatePeerJob call the manager's transaction makes, so the only
 // skipped side effect is the push to an agent that is not there.
 //
-// installation is a genuine global singleton: the table holds one row on a fixed
-// primary key, so it cannot be made per-run. Seeding it overwrites the
-// deployment's installation id and teardown restores the previous value.
-// Concurrent runs overwrite each other rather than colliding, and the last
-// teardown puts the original back.
-//
 // A seeded Proxy has no process sending heartbeats, and a proxy counts as active
 // only while its last heartbeat is under two minutes old. The factory stamps the
 // heartbeat heartbeatValidForMinutes ahead instead (two hours by default), which

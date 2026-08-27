@@ -50,9 +50,6 @@ func (f *factories) registry() sdk.FactoryRegistry {
 		"Guardrail":            f.guardrailFactory(),
 		"AccountBudgetRule":    f.budgetRuleFactory(),
 		"Consumption":          f.consumptionFactory(),
-
-		// Instance-wide.
-		"installation": f.installationFactory(),
 	}
 }
 
