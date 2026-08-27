@@ -29,7 +29,7 @@ type AccountInput struct {
 }
 
 func (f *factories) accountFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *AccountInput, _ sdk.FactoryContext) (map[string]any, error) {
 			embedded, err := f.embeddedIdp()
 			if err != nil {
@@ -96,7 +96,7 @@ type UserInput struct {
 }
 
 func (f *factories) userFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *UserInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -185,7 +185,7 @@ type PersonalAccessTokenInput struct {
 }
 
 func (f *factories) personalAccessTokenFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *PersonalAccessTokenInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			userID := in.UserID
 			if userID == "" {
@@ -229,7 +229,7 @@ type UserInviteRecordInput struct {
 }
 
 func (f *factories) userInviteFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *UserInviteRecordInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {

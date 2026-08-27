@@ -33,7 +33,7 @@ type GroupInput struct {
 }
 
 func (f *factories) groupFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *GroupInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -80,7 +80,7 @@ type SetupKeyInput struct {
 }
 
 func (f *factories) setupKeyFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *SetupKeyInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -150,7 +150,7 @@ type PeerInput struct {
 }
 
 func (f *factories) peerFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *PeerInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			userID := in.UserID
 			if userID == "" && in.SetupKey == "" {
@@ -255,7 +255,7 @@ type PolicyInput struct {
 }
 
 func (f *factories) policyFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *PolicyInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -319,7 +319,7 @@ type ChecksInput struct {
 }
 
 func (f *factories) postureChecksFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *ChecksInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -388,7 +388,7 @@ type RouteInput struct {
 }
 
 func (f *factories) routeFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *RouteInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -442,7 +442,7 @@ type NameServerGroupInput struct {
 }
 
 func (f *factories) nameServerGroupFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *NameServerGroupInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -487,7 +487,7 @@ type NetworkInput struct {
 }
 
 func (f *factories) networkFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *NetworkInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -528,7 +528,7 @@ type NetworkRouterInput struct {
 }
 
 func (f *factories) networkRouterFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *NetworkRouterInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -579,7 +579,7 @@ type NetworkResourceInput struct {
 }
 
 func (f *factories) networkResourceFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *NetworkResourceInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -644,7 +644,7 @@ type JobInput struct {
 }
 
 func (f *factories) jobFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *JobInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			triggeredBy := in.TriggeredBy
 			if triggeredBy == "" {
@@ -710,7 +710,7 @@ type ZoneInput struct {
 }
 
 func (f *factories) zoneFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *ZoneInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -754,7 +754,7 @@ type RecordInput struct {
 }
 
 func (f *factories) recordFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *RecordInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {

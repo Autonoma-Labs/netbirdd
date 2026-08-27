@@ -136,20 +136,9 @@ func AddEndpoints(deps Deps, router *mux.Router) error {
 		return fmt.Errorf("autonoma: account manager is required")
 	}
 
-	f := &factories{deps: deps}
-	if c, ok := deps.Store.(cleaner); ok {
-		f.cleaner = c
-	} else {
+	c, ok := deps.Store.(cleaner)
+	if !ok {
 		return fmt.Errorf("autonoma: store does not support scoped test-data teardown")
-	}
-
-	config := &sdk.HandlerConfig{
-		ScopeField:    scopeField,
-		SharedSecret:  sharedSecret,
-		SigningSecret: signingSecret,
-		SDK:           &sdk.SdkInfo{Orm: "gorm", Server: "gorilla-mux"},
-		Factories:     f.registry(),
-		Auth:          f.auth,
 	}
 
 	// The endpoint authenticates itself with the HMAC signature the SDK
@@ -158,18 +147,38 @@ func AddEndpoints(deps Deps, router *mux.Router) error {
 		return fmt.Errorf("autonoma: add bypass path: %w", err)
 	}
 
-	router.HandleFunc(EndpointPath, handle(config)).Methods("POST", "OPTIONS")
-	log.Infof("autonoma: test-data endpoint registered on /api%s with %d factories", EndpointPath, len(config.Factories))
+	router.HandleFunc(EndpointPath, handle(deps, c, sharedSecret, signingSecret)).Methods("POST", "OPTIONS")
+	log.Infof("autonoma: test-data endpoint registered on /api%s with %d factories", EndpointPath, len((&factories{}).registry()))
 
 	return nil
+}
+
+// configFor builds the per-request handler config. The factories are rebuilt
+// each time because they carry the request's context, which is what lets a
+// manager call log and trace against the request that asked for it.
+func configFor(deps Deps, c cleaner, sharedSecret, signingSecret string, ctx context.Context) *sdk.HandlerConfig {
+	f := &factories{deps: deps, cleaner: c, ctx: ctx}
+	return &sdk.HandlerConfig{
+		ScopeField:    scopeField,
+		SharedSecret:  sharedSecret,
+		SigningSecret: signingSecret,
+		SDK:           &sdk.SdkInfo{Orm: "gorm", Server: "gorilla-mux"},
+		Factories:     f.registry(),
+		Auth:          f.auth,
+	}
 }
 
 // handle adapts the SDK's framework-agnostic entry point to net/http. The SDK
 // ships a Gin adapter only, and the management API is gorilla/mux, so the glue
 // lives here: read the raw body (the signature covers the exact bytes),
 // lower-case the header names the SDK looks up, and write back what it returns.
-func handle(config *sdk.HandlerConfig) http.HandlerFunc {
+func handle(deps Deps, c cleaner, sharedSecret, signingSecret string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Seeding must survive the caller hanging up: rows already written
+		// would otherwise be orphaned, since the refs that tear them down only
+		// reach the caller in the response.
+		config := configFor(deps, c, sharedSecret, signingSecret, context.WithoutCancel(r.Context()))
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{

@@ -48,7 +48,7 @@ type ProxyInput struct {
 }
 
 func (f *factories) proxyFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *ProxyInput, _ sdk.FactoryContext) (map[string]any, error) {
 			proxyID := "proxy-" + uuid.NewString()
 			sessionID := uuid.NewString()
@@ -99,7 +99,7 @@ type DomainInput struct {
 }
 
 func (f *factories) domainFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *DomainInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -175,7 +175,7 @@ type ServiceInput struct {
 }
 
 func (f *factories) serviceFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *ServiceInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -277,7 +277,7 @@ type ProxyAccessTokenInput struct {
 }
 
 func (f *factories) proxyAccessTokenFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *ProxyAccessTokenInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			createdBy := in.CreatedBy
 			if createdBy == "" {
@@ -351,7 +351,7 @@ type AccessLogEntryInput struct {
 }
 
 func (f *factories) accessLogFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *AccessLogEntryInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			host := in.Host
 			if in.GatewayID != "" {

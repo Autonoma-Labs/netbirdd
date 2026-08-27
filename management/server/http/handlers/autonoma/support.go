@@ -22,6 +22,12 @@ import (
 type factories struct {
 	deps    Deps
 	cleaner cleaner
+	// ctx is the request's context, minus its cancellation. Seeding has to run
+	// to completion even if the caller hangs up: a half-created account whose
+	// refs never reached the caller cannot be torn down. The values survive, so
+	// every manager call a factory makes still logs and traces against the
+	// request that asked for it.
+	ctx context.Context
 }
 
 func writeJSON(w http.ResponseWriter, statusCode int, body map[string]any) {
@@ -37,6 +43,7 @@ func writeJSON(w http.ResponseWriter, statusCode int, body map[string]any) {
 // SDK hands factories an `interface{}` it unmarshalled into InputStruct; this
 // keeps that cast in one place so each factory body is plain typed Go.
 func define[I any](
+	f *factories,
 	create func(ctx context.Context, in *I, fctx sdk.FactoryContext) (map[string]any, error),
 	teardown func(ctx context.Context, record map[string]any) error,
 ) sdk.FactoryDefinition {
@@ -47,7 +54,7 @@ func define[I any](
 			if !ok {
 				return nil, fmt.Errorf("unexpected input type %T", input)
 			}
-			return create(context.Background(), in, fctx)
+			return create(f.ctx, in, fctx)
 		},
 	}
 	if teardown != nil {
@@ -56,7 +63,7 @@ func define[I any](
 			if !ok {
 				return fmt.Errorf("unexpected record type %T", record)
 			}
-			return ignoreNotFound(teardown(context.Background(), rec))
+			return ignoreNotFound(teardown(f.ctx, rec))
 		}
 	}
 	return def

@@ -24,7 +24,7 @@ type AgentNetworkSettingsInput struct {
 }
 
 func (f *factories) agentNetworkSettingsFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *AgentNetworkSettingsInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -77,7 +77,7 @@ type ProviderInput struct {
 }
 
 func (f *factories) providerFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *ProviderInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -126,7 +126,7 @@ type GuardrailInput struct {
 }
 
 func (f *factories) guardrailFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *GuardrailInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -180,7 +180,7 @@ type AccountBudgetRuleInput struct {
 }
 
 func (f *factories) budgetRuleFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *AccountBudgetRuleInput, fctx sdk.FactoryContext) (map[string]any, error) {
 			actor, err := f.actorFor(ctx, fctx, in.AccountID)
 			if err != nil {
@@ -245,7 +245,7 @@ type ConsumptionInput struct {
 }
 
 func (f *factories) consumptionFactory() sdk.FactoryDefinition {
-	return define(
+	return define(f,
 		func(ctx context.Context, in *ConsumptionInput, _ sdk.FactoryContext) (map[string]any, error) {
 			window := in.WindowSeconds
 			if window == 0 {

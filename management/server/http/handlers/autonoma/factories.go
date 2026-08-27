@@ -1,7 +1,6 @@
 package autonoma
 
 import (
-	"context"
 	"fmt"
 
 	sdk "github.com/autonoma-ai/sdk/sdks/go/autonoma"
@@ -62,7 +61,7 @@ func (f *factories) registry() sdk.FactoryRegistry {
 // chose, it holds the owner role, and it exists in every scenario. The offered
 // user is used only when a recipe seeds users without an account of its own.
 func (f *factories) auth(user map[string]any, actx sdk.AuthContext) (map[string]any, error) {
-	ctx := context.Background()
+	ctx := f.ctx
 
 	account := firstRecord(actx.Refs, "Account")
 	if account == nil {

@@ -18,16 +18,16 @@ import (
 // seeded once a test run finishes. Deleting the account takes most of the graph
 // with it, but these tables hang off an account without a GORM association, so
 // nothing cascades into them. They are deliberately narrow - each one is scoped
-// to a single account (or, for the two globals, to a single primary key) and
-// none of them is on the Store interface, because production code has no reason
-// to reach for them.
+// to a single account, or to a single row by a primary key the run itself
+// generated - and none of them is on the Store interface, because production
+// code has no reason to reach for them.
 //
 // Every one is idempotent: deleting a row that is already gone is a success, so
 // teardown can run after a cascade already removed the row.
 
 // DeletePeerJobForTestData removes one job belonging to an account.
 func (s *SqlStore) DeletePeerJobForTestData(ctx context.Context, accountID, jobID string) error {
-	result := s.db.Delete(&types.Job{}, accountAndIDQueryCondition, accountID, jobID)
+	result := s.db.WithContext(ctx).Delete(&types.Job{}, accountAndIDQueryCondition, accountID, jobID)
 	if result.Error != nil {
 		return status.Errorf(status.Internal, "delete peer job: %v", result.Error)
 	}
@@ -36,7 +36,7 @@ func (s *SqlStore) DeletePeerJobForTestData(ctx context.Context, accountID, jobI
 
 // DeleteProxyAccessTokenForTestData removes one proxy access token belonging to an account.
 func (s *SqlStore) DeleteProxyAccessTokenForTestData(ctx context.Context, accountID, tokenID string) error {
-	result := s.db.Delete(&types.ProxyAccessToken{}, accountAndIDQueryCondition, accountID, tokenID)
+	result := s.db.WithContext(ctx).Delete(&types.ProxyAccessToken{}, accountAndIDQueryCondition, accountID, tokenID)
 	if result.Error != nil {
 		return status.Errorf(status.Internal, "delete proxy access token: %v", result.Error)
 	}
@@ -50,6 +50,7 @@ func (s *SqlStore) DeleteAccessLogForTestData(ctx context.Context, accountID, lo
 	// id, so one id removes the whole trail: the usage ledger and the access
 	// log plus the authorising-group child rows that hang off each.
 	err := s.transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
 		if err := tx.Delete(&agentNetworkTypes.AgentNetworkUsageGroup{}, "account_id = ? and usage_id = ?", accountID, logID).Error; err != nil {
 			return err
 		}
@@ -72,7 +73,7 @@ func (s *SqlStore) DeleteAccessLogForTestData(ctx context.Context, accountID, lo
 
 // DeleteAgentNetworkConsumptionForTestData removes one consumption counter.
 func (s *SqlStore) DeleteAgentNetworkConsumptionForTestData(ctx context.Context, accountID string, kind agentNetworkTypes.ConsumptionDimension, dimID string, windowSeconds int64, windowStart time.Time) error {
-	result := s.db.Delete(&agentNetworkTypes.Consumption{},
+	result := s.db.WithContext(ctx).Delete(&agentNetworkTypes.Consumption{},
 		"account_id = ? and dim_kind = ? and dim_id = ? and window_seconds = ? and window_start_utc = ?",
 		accountID, kind, dimID, windowSeconds, windowStart)
 	if result.Error != nil {
@@ -83,7 +84,7 @@ func (s *SqlStore) DeleteAgentNetworkConsumptionForTestData(ctx context.Context,
 
 // DeleteProxyForTestData removes one proxy registration by id and session.
 func (s *SqlStore) DeleteProxyForTestData(ctx context.Context, proxyID, sessionID string) error {
-	result := s.db.Delete(&proxy.Proxy{}, "id = ? and session_id = ?", proxyID, sessionID)
+	result := s.db.WithContext(ctx).Delete(&proxy.Proxy{}, "id = ? and session_id = ?", proxyID, sessionID)
 	if result.Error != nil {
 		return status.Errorf(status.Internal, "delete proxy: %v", result.Error)
 	}
